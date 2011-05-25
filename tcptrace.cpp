@@ -7,7 +7,9 @@
 #include <sys/user.h>
 
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <sstream>
 
@@ -156,11 +158,11 @@ tcptrace::do_trace()
         if (m_is_entering) {
 #ifdef __x86_64__
             scno = ptrace(PTRACE_PEEKUSER, m_pid, ORIG_RAX * 8, NULL);
-            printf("system call number: %lu\n", scno);
 #else
             scno = ptrace(PTRACE_PEEKUSER, m_pid, ORIG_RAX * 4, NULL);
-            printf("system call number: %d\n", scno);
 #endif // __x86_64__
+
+            std::cout << "system call number: " << scno << std::endl;
         } else {
         }
 
