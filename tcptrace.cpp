@@ -65,20 +65,12 @@ tcptrace::set_sa_handler()
     sigaction(SIGHUP, &sa, NULL);
     sigaction(SIGTERM, &sa, NULL);
     sigaction(SIGQUIT, &sa, NULL);
-    sigaction(SIGCHLD, &sa, NULL);
 }
 
 void
 signal_handler(int signum)
 {
-    switch (signum) {
-    case SIGCHLD:
-        wait(NULL);
-        exit(0);
-        break;
-    default:
-        tcptrace::instance->cleanup();
-    }
+    tcptrace::instance->cleanup();
 }
 
 void
