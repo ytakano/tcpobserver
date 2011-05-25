@@ -128,6 +128,7 @@ tcptrace::create_child(char *cmd)
         }
     } else {
         m_pid = pid;
+        wait(NULL);
     }
 }
 
