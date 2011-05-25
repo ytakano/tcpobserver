@@ -14,6 +14,8 @@
 #include <iostream>
 #include <sstream>
 
+static tcptrace *tcptrace::instance;
+
 tcptrace::tcptrace(pid_t pid) : m_is_exec(false), m_pid(pid),
                                 m_is_entering(false)
 {
