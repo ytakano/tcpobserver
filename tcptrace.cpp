@@ -118,9 +118,10 @@ tcptrace::create_child(char *cmd)
         split(cmd_str, argv_vec);
 
         argv = new char*[argv_vec.size()];
-        for (i = 0; i < argv_vec.size(); i++) {
+        for (i = 0; i < argv_vec.size() - 1; i++) {
             argv[i] = const_cast<char*>(argv_vec[i].c_str());
         }
+        argv[argv_vec.size() - 1] = NULL;
 
         if (execvp(argv[0], argv) < 0) {
             PRINT_ERROR();
