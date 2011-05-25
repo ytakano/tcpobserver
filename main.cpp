@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "tcptrace.hpp"
+
 extern char *optarg;
 
 char *progname;
@@ -12,7 +14,7 @@ int
 main(int argc, char **argv)
 {
     int   opt;
-    char *child = NULL;
+    char *cmd = NULL;
     pid_t pid = 0;
 
     progname = argv[0];
@@ -33,8 +35,11 @@ main(int argc, char **argv)
             usage();
             return 0;
         } else {
-            child = argv[1];
+            cmd = argv[1];
+            tcptrace tracer(cmd);
         }
+    } else {
+        tcptrace tracer(pid);
     }
 }
 
