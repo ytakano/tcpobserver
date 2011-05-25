@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <iostream>
 #include <sstream>
 
 tcptrace::tcptrace(pid_t pid) : m_is_exec(false), m_pid(pid),
@@ -106,12 +107,13 @@ tcptrace::create_child(char *cmd)
 
         std::string cmd_str(cmd);
         std::vector<std::string> argv_vec;
+        std::vector<std::string>::size_type i;
         char ** argv;
 
         split(cmd_str, argv_vec);
 
         argv = new char*[argv_vec.size()];
-        for (int i = 0; i < argv_vec.size(); i++) {
+        for (i = 0; i < argv_vec.size(); i++) {
             argv[i] = const_cast<char*>(argv_vec[i].c_str());
         }
 
