@@ -77,8 +77,13 @@ void
 tcptrace::cleanup()
 {
     if (m_is_exec) {
+        ptrace(PTRACE_DETACH, m_pid, NULL, NULL);
+
         kill(m_pid, SIGCONT);
         kill(m_pid, SIGTERM);
+
+        wait(NULL);
+
         exit(0);
     } else {
         ptrace(PTRACE_DETACH, m_pid, NULL, NULL);
@@ -151,7 +156,6 @@ tcptrace::do_trace()
 
     for (;;) {
         if (ptrace(PTRACE_SYSCALL, m_pid, NULL, NULL) < 0) {
-            PRINT_ERROR();
             cleanup();
         }
 
