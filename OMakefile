@@ -16,7 +16,7 @@
 
 .PHONY: all clean
 
-CXXFLAGS += -Wall
+CXXFLAGS += -Wall -g -O0
 # ASFLAGS +=
 # LDFLAGS +=
 # INCLUDES +=

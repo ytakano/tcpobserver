@@ -31,6 +31,8 @@ tcptrace::tcptrace(pid_t pid) : m_is_exec(false), m_pid(pid),
         PRINT_ERROR();
         exit(-1);
     }
+
+    do_trace();
 }
 
 tcptrace::tcptrace(char *cmd) : m_is_exec(true), m_is_entering(false)
@@ -43,6 +45,8 @@ tcptrace::tcptrace(char *cmd) : m_is_exec(true), m_is_entering(false)
 
     set_sa_handler();
     create_child(cmd);
+
+    do_trace();
 }
 
 void

@@ -47,5 +47,5 @@ main(int argc, char **argv)
 void
 usage()
 {
-    std::cout << progname << "command | -p pid" << std::endl;
+    std::cout << progname << " command | -p pid" << std::endl;
 }
