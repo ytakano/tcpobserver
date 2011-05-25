@@ -26,7 +26,7 @@ FILES[] =
 	tcptrace
 
 clean:
-	rm -f *~ *.o
+	rm -f *~ *.o tcptrace
 
 all: $(CXXProgram tcptrace, $(FILES))
 

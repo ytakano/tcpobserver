@@ -32,6 +32,8 @@ tcptrace::tcptrace(pid_t pid) : m_is_exec(false), m_pid(pid),
         exit(-1);
     }
 
+    wait(NULL);
+
     do_trace();
 }
 
