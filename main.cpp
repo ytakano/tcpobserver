@@ -3,7 +3,11 @@
 
 #include <iostream>
 
-#include "tcptrace.hpp"
+#if defined __x86_64__
+    #include "tcptrace_x86_64.hpp"
+#elif defined __i386__
+    #include "tcptrace_x86.hpp"
+#endif
 
 extern char *optarg;
 
@@ -47,5 +51,5 @@ main(int argc, char **argv)
 void
 usage()
 {
-    std::cout << progname << " command | -p pid" << std::endl;
+    std::cout << progname << " [command | -p pid]" << std::endl;
 }

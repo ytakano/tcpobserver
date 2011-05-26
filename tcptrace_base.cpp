@@ -1,4 +1,4 @@
-#include "tcptrace.hpp"
+#include "tcptrace_base.hpp"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -14,9 +14,9 @@
 #include <iostream>
 #include <sstream>
 
-tcptrace *tcptrace::instance;
+tcptrace_base *tcptrace_base::instance;
 
-tcptrace::tcptrace(pid_t pid) : m_is_exec(false), m_pid(pid),
+tcptrace_base::tcptrace_base(pid_t pid) : m_is_exec(false), m_pid(pid),
                                 m_is_entering(false)
 {
     if (instance != NULL) {
@@ -37,7 +37,7 @@ tcptrace::tcptrace(pid_t pid) : m_is_exec(false), m_pid(pid),
     do_trace();
 }
 
-tcptrace::tcptrace(char *cmd) : m_is_exec(true), m_is_entering(false)
+tcptrace_base::tcptrace_base(char *cmd) : m_is_exec(true), m_is_entering(false)
 {
     if (instance != NULL) {
         throw "too many instance";
@@ -51,8 +51,13 @@ tcptrace::tcptrace(char *cmd) : m_is_exec(true), m_is_entering(false)
     do_trace();
 }
 
+tcptrace_base::~tcptrace_base()
+{
+
+}
+
 void
-tcptrace::set_sa_handler()
+tcptrace_base::set_sa_handler()
 {
     struct sigaction sa;
 
@@ -70,11 +75,11 @@ tcptrace::set_sa_handler()
 void
 signal_handler(int signum)
 {
-    tcptrace::instance->cleanup();
+    tcptrace_base::instance->cleanup();
 }
 
 void
-tcptrace::cleanup()
+tcptrace_base::cleanup()
 {
     if (m_is_exec) {
         ptrace(PTRACE_DETACH, m_pid, NULL, NULL);
@@ -92,7 +97,7 @@ tcptrace::cleanup()
 }
 
 void
-tcptrace::create_child(char *cmd)
+tcptrace_base::create_child(char *cmd)
 {
     pid_t pid;
 
@@ -134,7 +139,7 @@ tcptrace::create_child(char *cmd)
 }
 
 void
-tcptrace::split(std::string str, std::vector<std::string> &result)
+tcptrace_base::split(std::string str, std::vector<std::string> &result)
 {
     std::istringstream iss(str);
 
@@ -148,7 +153,7 @@ tcptrace::split(std::string str, std::vector<std::string> &result)
 }
 
 void
-tcptrace::do_trace()
+tcptrace_base::do_trace()
 {
 #ifdef __x86_64__
     unsigned long scno;
@@ -164,6 +169,7 @@ tcptrace::do_trace()
         wait(NULL);
 
         if (m_is_entering) {
+            before_syscall();
 #ifdef __x86_64__
             scno = ptrace(PTRACE_PEEKUSER, m_pid, ORIG_RAX * 8, NULL);
 #else
@@ -172,6 +178,7 @@ tcptrace::do_trace()
 
             std::cout << "system call number: " << scno << std::endl;
         } else {
+            after_syscall();
         }
 
         m_is_entering = !m_is_entering;
