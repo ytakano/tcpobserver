@@ -168,7 +168,7 @@ tcpobserver_base::do_trace()
 }
 
 double
-tcpobserver_base:get_datetime()
+tcpobserver_base::get_datetime()
 {
     timeval tv;
 
