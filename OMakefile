@@ -24,6 +24,8 @@ CXXFLAGS += -Wall -g -O0
 FILES[] =
 	main
 	tcptrace
+	tcptrace_x86
+	tcptrace_x86_64
 
 clean:
 	rm -f *~ *.o tcptrace

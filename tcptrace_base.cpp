@@ -155,12 +155,6 @@ tcptrace_base::split(std::string str, std::vector<std::string> &result)
 void
 tcptrace_base::do_trace()
 {
-#ifdef __x86_64__
-    unsigned long scno;
-#else
-    long int scno;
-#endif // __x86_64__
-
     for (;;) {
         if (ptrace(PTRACE_SYSCALL, m_pid, NULL, NULL) < 0) {
             cleanup();
@@ -168,18 +162,10 @@ tcptrace_base::do_trace()
 
         wait(NULL);
 
-        if (m_is_entering) {
+        if (m_is_entering)
             before_syscall();
-#ifdef __x86_64__
-            scno = ptrace(PTRACE_PEEKUSER, m_pid, ORIG_RAX * 8, NULL);
-#else
-            scno = ptrace(PTRACE_PEEKUSER, m_pid, ORIG_RAX * 4, NULL);
-#endif // __x86_64__
-
-            std::cout << "system call number: " << scno << std::endl;
-        } else {
+        else
             after_syscall();
-        }
 
         m_is_entering = !m_is_entering;
     }
