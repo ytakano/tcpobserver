@@ -23,7 +23,7 @@ CXXFLAGS += -Wall -g -O0
 
 FILES[] =
 	main
-	tcptrace
+	tcptrace_base
 	tcptrace_x86
 	tcptrace_x86_64
 
