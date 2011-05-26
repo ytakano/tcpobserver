@@ -1,5 +1,10 @@
 #include "tcptrace_x86_64.hpp"
 
+#include <sys/ptrace.h>
+#include <sys/reg.h>
+
+#include <iostream>
+
 #ifdef __x86_64__
 
 tcptrace::tcptrace(pid_t pid) : tcptrace_base(pid)

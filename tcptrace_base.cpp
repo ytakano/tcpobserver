@@ -3,8 +3,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ptrace.h>
-#include <sys/reg.h>
-#include <sys/user.h>
 
 #include <signal.h>
 #include <stdio.h>
