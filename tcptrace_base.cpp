@@ -14,8 +14,8 @@
 
 tcptrace_base *tcptrace_base::instance;
 
-tcptrace_base::tcptrace_base(pid_t pid) : m_is_exec(false), m_pid(pid),
-                                m_is_entering(false)
+tcptrace_base::tcptrace_base(pid_t pid) : m_pid(pid), m_is_exec(false)
+                                          m_is_entering(false)
 {
     if (instance != NULL) {
         throw "too many instance";
@@ -45,8 +45,6 @@ tcptrace_base::tcptrace_base(char *cmd) : m_is_exec(true), m_is_entering(false)
 
     set_sa_handler();
     create_child(cmd);
-
-    do_trace();
 }
 
 tcptrace_base::~tcptrace_base()

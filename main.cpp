@@ -42,9 +42,11 @@ main(int argc, char **argv)
         } else {
             cmd = argv[1];
             tcptrace tracer(cmd);
+            tracer.do_trace();
         }
     } else {
         tcptrace tracer(pid);
+        tracer.do_trace();
     }
 }
 

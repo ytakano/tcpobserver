@@ -21,6 +21,8 @@ public:
     tcptrace_base(char *cmd);
     virtual ~tcptrace_base();
 
+    void    do_trace();
+
     static tcptrace_base *instance;
 
 protected:
@@ -34,7 +36,6 @@ private:
     void    create_child(char *cmd);
     void    cleanup();
     void    split(std::string str, std::vector<std::string> &result);
-    void    do_trace();
 
     bool    m_is_exec;
     bool    m_is_entering;
