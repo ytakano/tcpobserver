@@ -20,12 +20,12 @@ const unsigned long tcpobserver::syscall_close   =   3;
 
 tcpobserver::tcpobserver(pid_t pid) : tcpobserver_base(pid)
 {
-
+        std::cout.presision(20);
 }
 
 tcpobserver::tcpobserver(char *cmd) : tcpobserver_base(cmd)
 {
-
+        std::cout.presision(20);
 }
 
 tcpobserver::~tcpobserver()
@@ -69,11 +69,11 @@ tcpobserver::exiting_socket()
 {
     int fd;
 
-    fd = ptrace(PTRACE_PEEKUSER, m_pid, ORIG_RAX * 8, NULL);
+    fd = ptrace(PTRACE_PEEKUSER, m_pid, RAX * 8, NULL);
 
     if ((m_socket_args.domain == AF_INET || m_socket_args.domain == AF_INET6) &&
-        m_socket_args.type == SOCK_STREAM && m_socket_args.protocol == 0 &&
-        fd != -1) {
+        m_socket_args.type == SOCK_STREAM &&
+        m_socket_args.protocol == IPPROTO_IP && fd != -1) {
         double datetime;
         std::string domain;
 

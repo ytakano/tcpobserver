@@ -16,7 +16,7 @@
 tcpobserver_base *tcpobserver_base::instance;
 
 tcpobserver_base::tcpobserver_base(pid_t pid) : m_pid(pid), m_is_exec(false),
-                                                m_is_entering(false)
+                                                m_is_entering(true)
 {
     if (instance != NULL) {
         throw "too many instance";
@@ -35,7 +35,7 @@ tcpobserver_base::tcpobserver_base(pid_t pid) : m_pid(pid), m_is_exec(false),
 }
 
 tcpobserver_base::tcpobserver_base(char *cmd) : m_is_exec(true),
-                                                m_is_entering(false)
+                                                m_is_entering(true)
 {
     if (instance != NULL) {
         throw "too many instance";
