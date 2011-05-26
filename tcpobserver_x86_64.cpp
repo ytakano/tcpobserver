@@ -74,6 +74,7 @@ tcpobserver::exiting_socket()
     if ((m_socket_args.domain == AF_INET || m_socket_args.domain == AF_INET6) &&
         m_socket_args.type == SOCK_STREAM && m_socket_args.protocol == 0 &&
         fd != -1) {
+        double datetime;
         std::string domain;
 
         if (m_socket_args.domain == AF_INET)
@@ -81,7 +82,10 @@ tcpobserver::exiting_socket()
         else
             domain = "IPv6";
 
-        std::cout << "socket "
+        datetime = get_datetime();
+
+        std::cout << datetime << "@datetime "
+                  << "socket@op "
                   << domain << "@protocol "
                   << fd << "@fd"
                   << std::endl;

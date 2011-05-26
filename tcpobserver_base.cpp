@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ptrace.h>
+#include <sys/time.h>
 
 #include <signal.h>
 #include <stdio.h>
@@ -31,8 +32,6 @@ tcpobserver_base::tcpobserver_base(pid_t pid) : m_pid(pid), m_is_exec(false),
     }
 
     wait(NULL);
-
-    do_trace();
 }
 
 tcpobserver_base::tcpobserver_base(char *cmd) : m_is_exec(true),
@@ -166,4 +165,14 @@ tcpobserver_base::do_trace()
 
         m_is_entering = !m_is_entering;
     }
+}
+
+double
+tcpobserver_base:get_datetime()
+{
+    timeval tv;
+
+    gettimeofday(&tv, NULL);
+
+    return (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0;
 }

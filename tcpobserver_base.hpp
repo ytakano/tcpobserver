@@ -29,6 +29,8 @@ protected:
     virtual void before_syscall() = 0;
     virtual void after_syscall()  = 0;
 
+    double  get_datetime();
+
     pid_t   m_pid;
 
 private:
