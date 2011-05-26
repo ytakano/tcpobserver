@@ -20,12 +20,12 @@ const unsigned long tcpobserver::syscall_close   =   3;
 
 tcpobserver::tcpobserver(pid_t pid) : tcpobserver_base(pid)
 {
-        std::cout.presision(20);
+        std::cout.precision(18);
 }
 
 tcpobserver::tcpobserver(char *cmd) : tcpobserver_base(cmd)
 {
-        std::cout.presision(20);
+        std::cout.precision(18);
 }
 
 tcpobserver::~tcpobserver()
