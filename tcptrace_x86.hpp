@@ -14,7 +14,7 @@ public:
     ~tcptrace();
 
 protected:
-    virtual void beore_syscall();
+    virtual void before_syscall();
     virtual void after_syscall();
 };
 
