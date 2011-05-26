@@ -27,6 +27,8 @@ protected:
     virtual void before_syscall() = 0;
     virtual void after_syscall()  = 0;
 
+    pid_t   m_pid;
+
 private:
     void    set_sa_handler();
     void    create_child(char *cmd);
@@ -35,7 +37,6 @@ private:
     void    do_trace();
 
     bool    m_is_exec;
-    pid_t   m_pid;
     bool    m_is_entering;
 
     friend void signal_handler(int signum);
