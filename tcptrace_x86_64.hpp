@@ -22,6 +22,7 @@ private:
     static const unsigned long syscall_bind;
     static const unsigned long syscall_listen;
     static const unsigned long syscall_accept;
+    static const unsigned long syscall_accept4;
     static const unsigned long syscall_connect;
     static const unsigned long syscall_close;
 
