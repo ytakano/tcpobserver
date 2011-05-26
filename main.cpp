@@ -4,9 +4,9 @@
 #include <iostream>
 
 #if defined __x86_64__
-    #include "tcptrace_x86_64.hpp"
+    #include "tcpobserver_x86_64.hpp"
 #elif defined __i386__
-    #include "tcptrace_x86.hpp"
+    #include "tcpobserver_x86.hpp"
 #endif
 
 extern char *optarg;
@@ -41,11 +41,11 @@ main(int argc, char **argv)
             return 0;
         } else {
             cmd = argv[1];
-            tcptrace tracer(cmd);
+            tcpobserver tracer(cmd);
             tracer.do_trace();
         }
     } else {
-        tcptrace tracer(pid);
+        tcpobserver tracer(pid);
         tracer.do_trace();
     }
 }

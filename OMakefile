@@ -23,13 +23,13 @@ CXXFLAGS += -Wall -g -O0
 
 FILES[] =
 	main
-	tcptrace_base
-	tcptrace_x86
-	tcptrace_x86_64
+	tcpobserver_base
+	tcpobserver_x86
+	tcpobserver_x86_64
 
 clean:
-	rm -f *~ *.o tcptrace
+	rm -f *~ *.o tcpobserver
 
-all: $(CXXProgram tcptrace, $(FILES))
+all: $(CXXProgram tcpobserver, $(FILES))
 
 .DEFAULT: all

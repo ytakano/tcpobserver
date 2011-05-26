@@ -1,4 +1,4 @@
-#include "tcptrace_x86_64.hpp"
+#include "tcpobserver_x86_64.hpp"
 
 #include <sys/ptrace.h>
 #include <sys/reg.h>
@@ -10,31 +10,31 @@
 
 #ifdef __x86_64__
 
-const unsigned long tcptrace::syscall_socket  =  41;
-const unsigned long tcptrace::syscall_bind    =  49;
-const unsigned long tcptrace::syscall_listen  =  50;
-const unsigned long tcptrace::syscall_accept  =  43;
-const unsigned long tcptrace::syscall_accept4 = 288;
-const unsigned long tcptrace::syscall_connect =  42;
-const unsigned long tcptrace::syscall_close   =   3;
+const unsigned long tcpobserver::syscall_socket  =  41;
+const unsigned long tcpobserver::syscall_bind    =  49;
+const unsigned long tcpobserver::syscall_listen  =  50;
+const unsigned long tcpobserver::syscall_accept  =  43;
+const unsigned long tcpobserver::syscall_accept4 = 288;
+const unsigned long tcpobserver::syscall_connect =  42;
+const unsigned long tcpobserver::syscall_close   =   3;
 
-tcptrace::tcptrace(pid_t pid) : tcptrace_base(pid)
+tcpobserver::tcpobserver(pid_t pid) : tcpobserver_base(pid)
 {
 
 }
 
-tcptrace::tcptrace(char *cmd) : tcptrace_base(cmd)
+tcpobserver::tcpobserver(char *cmd) : tcpobserver_base(cmd)
 {
 
 }
 
-tcptrace::~tcptrace()
+tcpobserver::~tcpobserver()
 {
 
 }
 
 void
-tcptrace::before_syscall()
+tcpobserver::before_syscall()
 {
     m_scno = ptrace(PTRACE_PEEKUSER, m_pid, ORIG_RAX * 8, NULL);
     std::cout << "system call number: " << m_scno << std::endl;
@@ -47,7 +47,7 @@ tcptrace::before_syscall()
 }
 
 void
-tcptrace::entering_socket()
+tcpobserver::entering_socket()
 {
     m_socket_args.domain   = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
     m_socket_args.type     = ptrace(PTRACE_PEEKUSER, m_pid, RSI * 8, NULL);
@@ -55,7 +55,7 @@ tcptrace::entering_socket()
 }
 
 void
-tcptrace::after_syscall()
+tcpobserver::after_syscall()
 {
     switch (m_scno) {
     case syscall_socket:
@@ -65,7 +65,7 @@ tcptrace::after_syscall()
 }
 
 void
-tcptrace::exiting_socket()
+tcpobserver::exiting_socket()
 {
     int fd;
 

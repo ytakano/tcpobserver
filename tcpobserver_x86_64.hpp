@@ -1,17 +1,17 @@
-#ifndef TCPTRACE_X86_64_HPP
-#define TCPTRACE_X86_64_HPP
+#ifndef TCPOBSERVER_X86_64_HPP
+#define TCPOBSERVER_X86_64_HPP
 
-#include "tcptrace_base.hpp"
+#include "tcpobserver_base.hpp"
 
 #ifdef __x86_64__
 
-class tcptrace : public tcptrace_base
+class tcpobserver : public tcpobserver_base
 {
 public:
-    tcptrace(pid_t pid);
-    tcptrace(char *cmd);
+    tcpobserver(pid_t pid);
+    tcpobserver(char *cmd);
 
-    ~tcptrace();
+    ~tcpobserver();
 
 protected:
     virtual void before_syscall();
@@ -41,4 +41,4 @@ private:
 
 #endif // __x86_64__
 
-#endif // TCPTRACE_X86_64_HPP
+#endif // TCPOBSERVER_X86_64_HPP

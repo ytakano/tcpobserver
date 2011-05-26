@@ -1,5 +1,5 @@
-#ifndef TCPTRACE_BASE_HPP
-#define TCPTRACE_BASE_HPP
+#ifndef TCPOBSERVER_BASE_HPP
+#define TCPOBSERVER_BASE_HPP
 
 #include <unistd.h>
 
@@ -15,15 +15,15 @@
 
 void signal_handler(int signum);
 
-class tcptrace_base {
+class tcpobserver_base {
 public:
-    tcptrace_base(pid_t pid);
-    tcptrace_base(char *cmd);
-    virtual ~tcptrace_base();
+    tcpobserver_base(pid_t pid);
+    tcpobserver_base(char *cmd);
+    virtual ~tcpobserver_base();
 
     void    do_trace();
 
-    static tcptrace_base *instance;
+    static tcpobserver_base *instance;
 
 protected:
     virtual void before_syscall() = 0;
@@ -43,4 +43,4 @@ private:
     friend void signal_handler(int signum);
 };
 
-#endif // TCPTRACE_BASE_HPP
+#endif // TCPOBSERVER_BASE_HPP

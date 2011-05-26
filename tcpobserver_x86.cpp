@@ -1,4 +1,4 @@
-#include "tcptrace_x86.hpp"
+#include "tcpobserver_x86.hpp"
 
 #include <sys/ptrace.h>
 #include <sys/reg.h>
@@ -7,23 +7,23 @@
 
 #ifdef __i386__
 
-tcptrace::tcptrace(pid_t pid) : tcptrace_base(pid)
+tcpobserver::tcpobserver(pid_t pid) : tcpobserver_base(pid)
 {
 
 }
 
-tcptrace::tcptrace(char *cmd) : tcptrace_base(cmd)
+tcpobserver::tcpobserver(char *cmd) : tcpobserver_base(cmd)
 {
 
 }
 
-tcptrace::~tcptrace()
+tcpobserver::~tcpobserver()
 {
 
 }
 
 void
-tcptrace::before_syscall()
+tcpobserver::before_syscall()
 {
     long int scno;
 
@@ -32,7 +32,7 @@ tcptrace::before_syscall()
 }
 
 void
-tcptrace::after_syscall()
+tcpobserver::after_syscall()
 {
 
 }

@@ -1,4 +1,4 @@
-#include "tcptrace_base.hpp"
+#include "tcpobserver_base.hpp"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -12,10 +12,10 @@
 #include <iostream>
 #include <sstream>
 
-tcptrace_base *tcptrace_base::instance;
+tcpobserver_base *tcpobserver_base::instance;
 
-tcptrace_base::tcptrace_base(pid_t pid) : m_pid(pid), m_is_exec(false),
-                                          m_is_entering(false)
+tcpobserver_base::tcpobserver_base(pid_t pid) : m_pid(pid), m_is_exec(false),
+                                                m_is_entering(false)
 {
     if (instance != NULL) {
         throw "too many instance";
@@ -35,7 +35,8 @@ tcptrace_base::tcptrace_base(pid_t pid) : m_pid(pid), m_is_exec(false),
     do_trace();
 }
 
-tcptrace_base::tcptrace_base(char *cmd) : m_is_exec(true), m_is_entering(false)
+tcpobserver_base::tcpobserver_base(char *cmd) : m_is_exec(true),
+                                                m_is_entering(false)
 {
     if (instance != NULL) {
         throw "too many instance";
@@ -47,13 +48,13 @@ tcptrace_base::tcptrace_base(char *cmd) : m_is_exec(true), m_is_entering(false)
     create_child(cmd);
 }
 
-tcptrace_base::~tcptrace_base()
+tcpobserver_base::~tcpobserver_base()
 {
 
 }
 
 void
-tcptrace_base::set_sa_handler()
+tcpobserver_base::set_sa_handler()
 {
     struct sigaction sa;
 
@@ -71,11 +72,11 @@ tcptrace_base::set_sa_handler()
 void
 signal_handler(int signum)
 {
-    tcptrace_base::instance->cleanup();
+    tcpobserver_base::instance->cleanup();
 }
 
 void
-tcptrace_base::cleanup()
+tcpobserver_base::cleanup()
 {
     if (m_is_exec) {
         ptrace(PTRACE_DETACH, m_pid, NULL, NULL);
@@ -93,7 +94,7 @@ tcptrace_base::cleanup()
 }
 
 void
-tcptrace_base::create_child(char *cmd)
+tcpobserver_base::create_child(char *cmd)
 {
     pid_t pid;
 
@@ -135,7 +136,7 @@ tcptrace_base::create_child(char *cmd)
 }
 
 void
-tcptrace_base::split(std::string str, std::vector<std::string> &result)
+tcpobserver_base::split(std::string str, std::vector<std::string> &result)
 {
     std::istringstream iss(str);
 
@@ -149,7 +150,7 @@ tcptrace_base::split(std::string str, std::vector<std::string> &result)
 }
 
 void
-tcptrace_base::do_trace()
+tcpobserver_base::do_trace()
 {
     for (;;) {
         if (ptrace(PTRACE_SYSCALL, m_pid, NULL, NULL) < 0) {
