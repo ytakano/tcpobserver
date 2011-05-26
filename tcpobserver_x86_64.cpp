@@ -73,7 +73,8 @@ tcpobserver::exiting_socket()
 
     if ((m_socket_args.domain == AF_INET || m_socket_args.domain == AF_INET6) &&
         m_socket_args.type == SOCK_STREAM &&
-        m_socket_args.protocol == IPPROTO_IP && fd != -1) {
+        (m_socket_args.protocol == IPPROTO_TCP ||
+         m_socket_args.protocol == 0) && fd != -1) {
         double datetime;
         std::string domain;
 
