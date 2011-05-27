@@ -64,7 +64,8 @@ void
 tcpobserver::entering_bind()
 {
     m_bind_args.sockfd  = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
-    m_bind_args.addr    = ptrace(PTRACE_PEEKUSER, m_pid, RSI * 8, NULL);
+    m_bind_args.addr    = (sockaddr*)ptrace(PTRACE_PEEKUSER, m_pid, RSI * 8,
+                                            NULL);
     m_bind_args.addrlen = ptrace(PTRACE_PEEKUSER, m_pid, RDX * 8, NULL);
 }
 
@@ -171,7 +172,7 @@ tcpobserver::exiting_bind()
 
     std::cerr << datetime << "@datetime "
               << "bind@op "
-              << m_bind_args.fd << "@fd "
+              << m_bind_args.sockfd << "@fd "
               << addr << "@addr "
               << port << "@port"
               << std::endl;
