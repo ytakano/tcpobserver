@@ -212,7 +212,7 @@ tcpobserver::exiting_listen()
 
     std::cerr << datetime << "@datetime "
               << "listen@op "
-              << fd << "@fd"
+              << m_listen_args.sockfd << "@fd"
               << std::endl;
 }
 

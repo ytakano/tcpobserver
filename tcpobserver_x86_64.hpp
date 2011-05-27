@@ -51,6 +51,7 @@ private:
     std::set<int> m_fd_set;
     socket_args   m_socket_args;
     bind_args     m_bind_args;
+    listen_args   m_listen_args;
 
     // for socket
     void entering_socket();
