@@ -3,6 +3,8 @@
 
 #include "tcpobserver_base.hpp"
 
+#include <set>
+
 #ifdef __x86_64__
 
 class tcpobserver : public tcpobserver_base
@@ -32,11 +34,21 @@ private:
         int protocol;
     };
 
+    struct bind_args {
+        int       sockfd;
+        sockaddr *addr;
+        socklen_t addrlen;
+    };
+
     unsigned long m_scno;
+    std::set<int> m_fd_set;
     socket_args   m_socket_args;
+    bind_args     m_bind_args;
 
     void entering_socket();
     void exiting_socket();
+    void entering_bind();
+    void exiting_bind();
 };
 
 #endif // __x86_64__

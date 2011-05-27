@@ -176,3 +176,28 @@ tcpobserver_base::get_datetime()
 
     return (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0;
 }
+
+void
+tcpobserver_base::read_data(void *buf, void *addr, size_t len)
+{
+    long val;
+
+    for (;;) {
+        if (len >= sizeof(val)) {
+            val = ptrace(PTRACE_PEEKDATA, m_pid, addr, NULL);
+
+            memcpy(buf, &val, sizeof(val));
+
+            buf  = (char*)buf + sizeof(val);
+            addr = (char*)addr + sizeof(val);
+
+            len -= sizeof(val);
+        } else {
+            val = ptrace(PTRACE_PEEKDATA, m_pid, addr, NULL);
+
+            memcpy(buf, &val, len);
+
+            return;
+        }
+    }
+}

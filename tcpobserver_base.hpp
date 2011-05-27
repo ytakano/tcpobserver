@@ -30,6 +30,7 @@ protected:
     virtual void after_syscall()  = 0;
 
     double  get_datetime();
+    void    read_data(void *buf, void *addr, size_t len);
 
     pid_t   m_pid;
 
