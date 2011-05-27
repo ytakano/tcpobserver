@@ -43,15 +43,26 @@ private:
         socklen_t addrlen;
     };
 
+    struct listen_args {
+        int sockfd;
+    };
+
     unsigned long m_scno;
     std::set<int> m_fd_set;
     socket_args   m_socket_args;
     bind_args     m_bind_args;
 
+    // for socket
     void entering_socket();
     void exiting_socket();
+
+    // for bind
     void entering_bind();
     void exiting_bind();
+
+    // for listen
+    void entering_listen();
+    void exiting_listen();
 };
 
 #endif // __x86_64__

@@ -24,12 +24,12 @@ const unsigned long tcpobserver::syscall_close   =   3;
 
 tcpobserver::tcpobserver(pid_t pid) : tcpobserver_base(pid)
 {
-    std::cerr.precision(20);
+    std::cerr.precision(19);
 }
 
 tcpobserver::tcpobserver(char *cmd) : tcpobserver_base(cmd)
 {
-    std::cerr.precision(20);
+    std::cerr.precision(19);
 }
 
 tcpobserver::~tcpobserver()
@@ -46,8 +46,12 @@ tcpobserver::before_syscall()
     switch (m_scno) {
     case syscall_socket:
         entering_socket();
+        break;
     case syscall_bind:
         entering_bind();
+        break;
+    case syscall_listen:
+        entering_listen();
         break;
     }
 }
@@ -70,13 +74,23 @@ tcpobserver::entering_bind()
 }
 
 void
+tcpobserver::entering_listen()
+{
+    m_listen_args.sockfd = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
+}
+
+void
 tcpobserver::after_syscall()
 {
     switch (m_scno) {
     case syscall_socket:
         exiting_socket();
+        break;
     case syscall_bind:
         exiting_bind();
+        break;
+    case syscall_listen:
+        exiting_listen();
         break;
     }
 }
@@ -106,8 +120,8 @@ tcpobserver::exiting_socket()
 
         std::cerr << datetime << "@datetime "
                   << "socket@op "
-                  << domain << "@protocol "
                   << fd << "@fd"
+                  << domain << "@protocol "
                   << std::endl;
     }
 }
@@ -127,6 +141,7 @@ tcpobserver::exiting_bind()
 
 
     sockaddr_storage saddr;
+    std::string      domain;
     double           datetime;
     uint16_t         port;
     char             addr[64];
@@ -146,7 +161,8 @@ tcpobserver::exiting_bind()
         saddr_in = (sockaddr_in*)&saddr;
 
         inet_ntop(AF_INET, &saddr_in->sin_addr, addr, sizeof(addr));
-        port = ntohs(saddr_in->sin_port);
+        port   = ntohs(saddr_in->sin_port);
+        domain = "IPv4";
         break;
     }
     case AF_INET6:
@@ -161,7 +177,9 @@ tcpobserver::exiting_bind()
         saddr_in6 = (sockaddr_in6*)&saddr;
 
         inet_ntop(AF_INET6, &saddr_in6->sin6_addr, addr, sizeof(addr));
-        port = ntohs(saddr_in6->sin6_port);
+
+        port   = ntohs(saddr_in6->sin6_port);
+        domain = "IPv6";
         break;
     }
     default:
@@ -173,8 +191,28 @@ tcpobserver::exiting_bind()
     std::cerr << datetime << "@datetime "
               << "bind@op "
               << m_bind_args.sockfd << "@fd "
+              << domain << "@protocol "
               << addr << "@addr "
               << port << "@port"
+              << std::endl;
+}
+
+void
+tcpobserver::exiting_listen()
+{
+    int result;
+
+    result = ptrace(PTRACE_PEEKUSER, m_pid, RAX * 8, NULL);
+
+    if (result < 0)
+        return;
+
+
+    double datetime;
+
+    std::cerr << datetime << "@datetime "
+              << "listen@op "
+              << fd << "@fd"
               << std::endl;
 }
 
