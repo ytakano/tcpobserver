@@ -24,12 +24,12 @@ const unsigned long tcpobserver::syscall_close   =   3;
 
 tcpobserver::tcpobserver(pid_t pid) : tcpobserver_base(pid)
 {
-    std::cerr.precision(19);
+
 }
 
 tcpobserver::tcpobserver(char *cmd) : tcpobserver_base(cmd)
 {
-    std::cerr.precision(19);
+
 }
 
 tcpobserver::~tcpobserver()
@@ -52,6 +52,10 @@ tcpobserver::before_syscall()
         break;
     case syscall_listen:
         entering_listen();
+        break;
+    case syscall_accept:
+    case syscall_accept4:
+        entering_accept();
         break;
     }
 }
@@ -80,6 +84,45 @@ tcpobserver::entering_listen()
 }
 
 void
+tcpobserver::entering_accept()
+{
+    m_accept_args.sockfd  = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
+    m_accept_args.addr    = (sockaddr*)ptrace(PTRACE_PEEKUSER, m_pid, RSI * 8,
+                                             NULL);
+    m_accept_args.addrlen = (socklen_t*)ptrace(PTRACE_PEEKUSER, m_pid, RDX * 8,
+                                               NULL);
+
+    if (m_accept_args.addr == NULL) {
+        unsigned long rsp;
+        unsigned long size;
+        unsigned long rem;
+        void *saddr;
+        void *slen;
+
+        rsp = ptrace(PTRACE_PEEKUSER, m_pid, RSP * 8, NULL);
+        m_accept_args.rsp = rsp;
+
+        size = sizeof(sockaddr_storage) + sizeof(socklen_t);
+
+        rem  = size % 16;
+        size = (size == 0) ? size : size + 16 - rem;
+        rsp -= size;
+
+        saddr = (void*)(rsp + size);
+        slen  = (void*)(rsp + size - sizeof(sockaddr_storage));
+
+        m_accept_args.addr    = (sockaddr*)saddr;
+        m_accept_args.addrlen = (socklen_t*)slen;
+
+        ptrace(PTRACE_POKEUSER, m_pid, RSP * 8, (void*)rsp);
+        ptrace(PTRACE_POKEUSER, m_pid, RSI * 8, saddr);
+        ptrace(PTRACE_POKEUSER, m_pid, RDX * 8, slen);
+    } else {
+        m_accept_args.rsp = 0;
+    }
+}
+
+void
 tcpobserver::after_syscall()
 {
     switch (m_scno) {
@@ -91,6 +134,9 @@ tcpobserver::after_syscall()
         break;
     case syscall_listen:
         exiting_listen();
+    case syscall_accept:
+    case syscall_accept4:
+        exiting_accept();
         break;
     }
 }
@@ -118,7 +164,8 @@ tcpobserver::exiting_socket()
 
         datetime = get_datetime();
 
-        std::cerr << datetime << "@datetime "
+        std::cerr << std::setprecision(19)
+                  << datetime << "@datetime "
                   << "socket@op "
                   << fd << "@fd"
                   << domain << "@protocol "
@@ -163,6 +210,7 @@ tcpobserver::exiting_bind()
         inet_ntop(AF_INET, &saddr_in->sin_addr, addr, sizeof(addr));
         port   = ntohs(saddr_in->sin_port);
         domain = "IPv4";
+
         break;
     }
     case AF_INET6:
@@ -177,9 +225,9 @@ tcpobserver::exiting_bind()
         saddr_in6 = (sockaddr_in6*)&saddr;
 
         inet_ntop(AF_INET6, &saddr_in6->sin6_addr, addr, sizeof(addr));
-
         port   = ntohs(saddr_in6->sin6_port);
         domain = "IPv6";
+
         break;
     }
     default:
@@ -188,7 +236,8 @@ tcpobserver::exiting_bind()
 
     datetime = get_datetime();
 
-    std::cerr << datetime << "@datetime "
+    std::cerr << std::setprecision(19)
+              << datetime << "@datetime "
               << "bind@op "
               << m_bind_args.sockfd << "@fd "
               << domain << "@protocol "
@@ -210,9 +259,92 @@ tcpobserver::exiting_listen()
 
     double datetime;
 
-    std::cerr << datetime << "@datetime "
+    datetime = get_datetime();
+
+    std::cerr << std::setprecision(19)
+              << datetime << "@datetime "
               << "listen@op "
               << m_listen_args.sockfd << "@fd"
+              << std::endl;
+}
+
+void
+tcpobserver::exiting_accept()
+{
+    if (m_accept_args.rsp != 0)
+        ptrace(PTRACE_POKEUSER, m_pid, RSP * 8, (void*)m_accept_args.rsp);
+
+
+    int result;
+
+    result = ptrace(PTRACE_PEEKUSER, m_pid, RAX * 8, NULL);
+
+    if (result < 0)
+        return;
+
+
+    sockaddr_storage saddr;
+    std::string      domain;
+    double           datetime;
+    uint16_t         port;
+    char             addr[64];
+
+    read_data(&saddr, m_accept_args.addr, sizeof(long));
+
+    switch (saddr.ss_family) {
+    case AF_INET:
+    {
+        sockaddr_in *saddr_in;
+        socklen_t    slen;
+
+        read_data(&slen, m_accept_args.addrlen, sizeof(slen));
+
+        if (slen < sizeof(sockaddr_in))
+            return;
+
+        read_data(&saddr, m_accept_args.addr, sizeof(sockaddr_in));
+
+        saddr_in = (sockaddr_in*)&saddr;
+
+        inet_ntop(AF_INET, &saddr_in->sin_addr, addr, sizeof(addr));
+        port   = ntohs(saddr_in->sin_port);
+        domain = "IPv4";
+        break;
+    }
+    case AF_INET6:
+    {
+        sockaddr_in6 *saddr_in6;
+        socklen_t     slen;
+
+        read_data(&slen, m_accept_args.addrlen, sizeof(slen));
+
+        if (slen < sizeof(sockaddr_in6))
+            return;
+
+        read_data(&saddr, m_accept_args.addr, sizeof(sockaddr_in6));
+
+        saddr_in6 = (sockaddr_in6*)&saddr;
+
+        inet_ntop(AF_INET6, &saddr_in6->sin6_addr, addr, sizeof(addr));
+        port   = ntohs(saddr_in6->sin6_port);
+        domain = "IPv6";
+
+        break;
+    }
+    default:
+        return;
+    }
+
+    datetime = get_datetime();
+
+    std::cerr << std::setprecision(19)
+              << datetime << "@datetime "
+              << "accept@op "
+              << m_accpet_args.sockfd << "@listen_fd"
+              << result << "@fd "
+              << domain << "@protocol "
+              << addr << "@addr "
+              << port << "@port "
               << std::endl;
 }
 

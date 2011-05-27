@@ -47,6 +47,13 @@ private:
         int sockfd;
     };
 
+    struct accept_args {
+        int           sockfd;
+        sockaddr     *addr;
+        socklen_t     addrlen;
+        unsigned long rsp;
+    };
+
     unsigned long m_scno;
     std::set<int> m_fd_set;
     socket_args   m_socket_args;
@@ -64,6 +71,10 @@ private:
     // for listen
     void entering_listen();
     void exiting_listen();
+
+    // for accept and accept4
+    void entering_accept();
+    void exiting_accept();
 };
 
 #endif // __x86_64__
