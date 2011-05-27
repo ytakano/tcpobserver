@@ -2,8 +2,6 @@
 
 #include <sys/ptrace.h>
 #include <sys/reg.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 
 #include <netinet/in.h>
 
@@ -169,7 +167,7 @@ tcpobserver::exiting_bind()
         return;
     }
 
-    datetime = get_datetimee();
+    datetime = get_datetime();
 
     std::cerr << datetime << "@datetime "
               << "bind@op "

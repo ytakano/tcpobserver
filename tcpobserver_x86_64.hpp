@@ -3,6 +3,9 @@
 
 #include "tcpobserver_base.hpp"
 
+#include <sys/types.h>
+#include <sys/socket.h>
+
 #include <set>
 
 #ifdef __x86_64__
