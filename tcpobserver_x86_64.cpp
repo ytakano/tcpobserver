@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 
 #ifdef __x86_64__
@@ -340,7 +341,7 @@ tcpobserver::exiting_accept()
     std::cerr << std::setprecision(19)
               << datetime << "@datetime "
               << "accept@op "
-              << m_accpet_args.sockfd << "@listen_fd"
+              << m_accept_args.sockfd << "@listen_fd"
               << result << "@fd "
               << domain << "@protocol "
               << addr << "@addr "

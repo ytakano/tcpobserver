@@ -50,7 +50,7 @@ private:
     struct accept_args {
         int           sockfd;
         sockaddr     *addr;
-        socklen_t     addrlen;
+        socklen_t    *addrlen;
         unsigned long rsp;
     };
 
@@ -59,6 +59,7 @@ private:
     socket_args   m_socket_args;
     bind_args     m_bind_args;
     listen_args   m_listen_args;
+    accept_args   m_accept_args;
 
     // for socket
     void entering_socket();
