@@ -135,6 +135,7 @@ tcpobserver::after_syscall()
         break;
     case syscall_listen:
         exiting_listen();
+        break;
     case syscall_accept:
     case syscall_accept4:
         exiting_accept();
@@ -341,7 +342,7 @@ tcpobserver::exiting_accept()
     std::cerr << std::setprecision(19)
               << datetime << "@datetime "
               << "accept@op "
-              << m_accept_args.sockfd << "@listen_fd"
+              << m_accept_args.sockfd << "@listen_fd "
               << result << "@fd "
               << domain << "@protocol "
               << addr << "@addr "
