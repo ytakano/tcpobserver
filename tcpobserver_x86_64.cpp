@@ -24,12 +24,12 @@ const unsigned long tcpobserver::syscall_close   =   3;
 
 tcpobserver::tcpobserver(pid_t pid) : tcpobserver_base(pid)
 {
-        std::cout.precision(20);
+    std::cerr.precision(20);
 }
 
 tcpobserver::tcpobserver(char *cmd) : tcpobserver_base(cmd)
 {
-        std::cout.precision(20);
+    std::cerr.precision(20);
 }
 
 tcpobserver::~tcpobserver()
@@ -145,7 +145,7 @@ tcpobserver::exiting_bind()
 
         saddr_in = (sockaddr_in*)&saddr;
 
-        inet_ntop(AF_INET, saddr_in, addr, sizeof(addr));
+        inet_ntop(AF_INET, &saddr_in->sin_addr, addr, sizeof(addr));
         port = ntohs(saddr_in->sin_port);
         break;
     }
@@ -160,7 +160,7 @@ tcpobserver::exiting_bind()
 
         saddr_in6 = (sockaddr_in6*)&saddr;
 
-        inet_ntop(AF_INET6, saddr_in6, addr, sizeof(addr));
+        inet_ntop(AF_INET6, &saddr_in6->sin6_addr, addr, sizeof(addr));
         port = ntohs(saddr_in6->sin6_port);
         break;
     }
