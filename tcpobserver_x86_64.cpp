@@ -97,8 +97,8 @@ tcpobserver::entering_accept()
         unsigned long rsp;
         unsigned long size;
         unsigned long rem;
-        void *saddr;
-        void *slen;
+        void *p_saddr;
+        void *p_slen;
 
         rsp = ptrace(PTRACE_PEEKUSER, m_pid, RSP * 8, NULL);
         m_accept_args.rsp = rsp;
@@ -109,15 +109,27 @@ tcpobserver::entering_accept()
         size = (size == 0) ? size : size + 16 - rem;
         rsp -= size;
 
-        saddr = (void*)(rsp + size);
-        slen  = (void*)(rsp + size - sizeof(sockaddr_storage));
+        p_saddr = (void*)(m_accept_args.rsp - sizeof(sockaddr_storage));
+        p_slen  = (void*)(m_accept_args.rsp - sizeof(sockaddr_storage) -
+                          sizeof(socklen_t));
 
-        m_accept_args.addr    = (sockaddr*)saddr;
-        m_accept_args.addrlen = (socklen_t*)slen;
+        m_accept_args.addr    = (sockaddr*)p_saddr;
+        m_accept_args.addrlen = (socklen_t*)p_slen;
+
+
+        sockaddr_storage saddr;
+        socklen_t        slen;
+
+        memset(&saddr, 0, sizeof(saddr));
+        slen = sizeof(saddr);
+
+        write_data(&saddr, p_saddr, sizeof(saddr));
+        write_data(*slen, p_slen, sizeof(slen));
+
 
         ptrace(PTRACE_POKEUSER, m_pid, RSP * 8, (void*)rsp);
-        ptrace(PTRACE_POKEUSER, m_pid, RSI * 8, saddr);
-        ptrace(PTRACE_POKEUSER, m_pid, RDX * 8, slen);
+        ptrace(PTRACE_POKEUSER, m_pid, RSI * 8, p_saddr);
+        ptrace(PTRACE_POKEUSER, m_pid, RDX * 8, p_slen);
     } else {
         m_accept_args.rsp = 0;
     }
@@ -275,6 +287,8 @@ tcpobserver::exiting_accept()
 {
     if (m_accept_args.rsp != 0)
         ptrace(PTRACE_POKEUSER, m_pid, RSP * 8, (void*)m_accept_args.rsp);
+
+    m_accept_args.rsp = 0;
 
 
     int result;

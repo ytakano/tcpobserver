@@ -31,6 +31,7 @@ protected:
 
     double  get_datetime();
     void    read_data(void *buf, void *addr, size_t len);
+    void    write_data(void *buf, void *addr, size_t len);
 
     pid_t   m_pid;
 

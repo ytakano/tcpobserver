@@ -201,3 +201,32 @@ tcpobserver_base::read_data(void *buf, void *addr, size_t len)
         }
     }
 }
+
+void
+tcpobserver::write_data(void *buf, void *addr, size_t len)
+{
+    long val;
+
+    for (;;) {
+        if (len > sizeof(val)) {
+            memcpy(&val, buf, sizeof(val));
+            ptrace(PTRACE_POKEDATA, m_pid, addr, (void*)val);
+
+            buf  = (char*)buf + sizeof(val);
+            addr = (char*)buf + sizeof(val);
+            len -= sizeof(val);
+        } else {
+            long orig;
+
+            orig = ptrace(PTRACE_PEEKDATA, m_pid, addr, NULL);
+
+            memcpy(&val, buf, len);
+            memcpy((char*)&val + sizeof(len), (char*)&orig + sizeof(len),
+                   sizeof(val) - len);
+
+            ptrace(PTRACE_POKEDATA, m_pid, addr, (void*)val);
+
+            return;
+        }
+    }
+}
