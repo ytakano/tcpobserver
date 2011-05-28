@@ -221,8 +221,7 @@ tcpobserver_base::write_data(void *buf, void *addr, size_t len)
             orig = ptrace(PTRACE_PEEKDATA, m_pid, addr, NULL);
 
             memcpy(&val, buf, len);
-            memcpy((char*)&val + sizeof(len), (char*)&orig + sizeof(len),
-                   sizeof(val) - len);
+            memcpy((char*)&val + len, (char*)&orig + len, sizeof(val) - len);
 
             ptrace(PTRACE_POKEDATA, m_pid, addr, (void*)val);
 
