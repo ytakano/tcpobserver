@@ -180,10 +180,10 @@ tcpobserver::exiting_socket()
         datetime = get_datetime();
 
         std::cerr << std::setprecision(19)
-                  << datetime << "@datetime "
-                  << "socket@op "
-                  << fd << "@fd"
-                  << domain << "@protocol "
+                  << "datetime@" << datetime
+                  << " op@socket"
+                  << " fd@" << fd
+                  << " protocol@" << domain
                   << std::endl;
     }
 }
@@ -252,12 +252,12 @@ tcpobserver::exiting_bind()
     datetime = get_datetime();
 
     std::cerr << std::setprecision(19)
-              << datetime << "@datetime "
-              << "bind@op "
-              << m_bind_args.sockfd << "@fd "
-              << domain << "@protocol "
-              << addr << "@addr "
-              << port << "@port"
+              << "datetime@" << datetime
+              << " op@bind"
+              << " fd@" << m_bind_args.sockfd
+              << " protocol@" << domain
+              << " addr@" << addr
+              << " port@" << port
               << std::endl;
 }
 
@@ -277,9 +277,9 @@ tcpobserver::exiting_listen()
     datetime = get_datetime();
 
     std::cerr << std::setprecision(19)
-              << datetime << "@datetime "
-              << "listen@op "
-              << m_listen_args.sockfd << "@fd"
+              << "datetime@" << datetime
+              << " op@listen"
+              << " fd@" << m_listen_args.sockfd
               << std::endl;
 }
 
@@ -355,13 +355,13 @@ tcpobserver::exiting_accept()
     datetime = get_datetime();
 
     std::cerr << std::setprecision(19)
-              << datetime << "@datetime "
-              << "accept@op "
-              << m_accept_args.sockfd << "@listen_fd "
-              << result << "@fd "
-              << domain << "@protocol "
-              << addr << "@addr "
-              << port << "@port "
+              << "datetime@" << datetime
+              << " op@accept" <<
+              << " listen_fd@" << m_accept_args.sockfd
+              << " fd@" << result
+              << " protocol@" << domain
+              << " addr@" << addr
+              << " port@" << port
               << std::endl;
 }
 
