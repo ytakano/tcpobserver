@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 
 #include <stdint.h>
+#include <string.h>
 
 #include <iostream>
 #include <iomanip>
@@ -124,8 +125,8 @@ tcpobserver::entering_accept()
         slen = sizeof(saddr);
 
         write_data(&saddr, p_saddr, sizeof(saddr));
-        write_data(*slen, p_slen, sizeof(slen));
-
+        write_data(&slen, p_slen, sizeof(slen));
+        
 
         ptrace(PTRACE_POKEUSER, m_pid, RSP * 8, (void*)rsp);
         ptrace(PTRACE_POKEUSER, m_pid, RSI * 8, p_saddr);

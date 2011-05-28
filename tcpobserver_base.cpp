@@ -203,7 +203,7 @@ tcpobserver_base::read_data(void *buf, void *addr, size_t len)
 }
 
 void
-tcpobserver::write_data(void *buf, void *addr, size_t len)
+tcpobserver_base::write_data(void *buf, void *addr, size_t len)
 {
     long val;
 
