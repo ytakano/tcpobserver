@@ -356,7 +356,7 @@ tcpobserver::exiting_accept()
 
     std::cerr << std::setprecision(19)
               << "datetime@" << datetime
-              << " op@accept" <<
+              << " op@accept"
               << " listen_fd@" << m_accept_args.sockfd
               << " fd@" << result
               << " protocol@" << domain
