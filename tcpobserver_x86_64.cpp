@@ -60,7 +60,7 @@ tcpobserver::before_syscall()
         entering_accept();
         break;
     case syscall_connect:
-        entering_connect;
+        entering_connect();
         break;
     }
 }
@@ -397,7 +397,7 @@ tcpobserver::exiting_connect()
     if (result < 0)
         return;
 
-    if (connect_args.addrlen < sizeof(long))
+    if (m_connect_args.addrlen < sizeof(long))
         return;
 
 
