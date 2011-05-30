@@ -62,6 +62,9 @@ tcpobserver::before_syscall()
     case syscall_connect:
         entering_connect();
         break;
+    case syscall_close:
+        entering_close();
+        break;
     }
 }
 
@@ -149,6 +152,15 @@ tcpobserver::entering_connect()
 }
 
 void
+tcpobserver::entering_close()
+{
+    m_close_arg = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
+
+    if (m_fd_set.find(m_close_arg) == m_fd_set.end())
+        m_close_arg = -1;
+}
+
+void
 tcpobserver::after_syscall()
 {
     switch (m_scno) {
@@ -168,6 +180,8 @@ tcpobserver::after_syscall()
     case syscall_connect:
         exiting_connect();
         break;
+    case syscall_close:
+        exiting_close();
     }
 }
 
@@ -459,6 +473,23 @@ tcpobserver::exiting_connect()
               << " protocol@" << domain
               << " addr@" << addr
               << " port@" << port
+              << std::endl;
+}
+
+void
+tcpobserver::exiting_close()
+{
+    if (m_close_arg < 0)
+        return;
+
+
+    double datetime;
+
+    datetime = get_datetime();
+
+    std::cerr << std::setprecision(19)
+              << "datetime@" << datetime
+              << " fd@" << m_close_arg
               << std::endl;
 }
 

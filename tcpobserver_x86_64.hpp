@@ -67,6 +67,7 @@ private:
     listen_args   m_listen_args;
     accept_args   m_accept_args;
     connect_args  m_connect_args;
+    int           m_close_arg;
 
     // for socket
     void entering_socket();
@@ -87,6 +88,10 @@ private:
     // for connect
     void entering_connect();
     void exiting_connect();
+
+    // for close
+    void entering_close();
+    void exiting_close();
 };
 
 #endif // __x86_64__
