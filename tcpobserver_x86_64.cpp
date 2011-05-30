@@ -59,6 +59,9 @@ tcpobserver::before_syscall()
     case syscall_accept4:
         entering_accept();
         break;
+    case syscall_connect:
+        entering_connect;
+        break;
     }
 }
 
@@ -137,6 +140,15 @@ tcpobserver::entering_accept()
 }
 
 void
+tcpobserver::entering_connect()
+{
+    m_connect_args.sockfd  = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
+    m_connect_args.addr    = (sockaddr*)ptrace(PTRACE_PEEKUSER, m_pid, RSI * 8,
+                                               NULL);
+    m_connect_args.addrlen = ptrace(PTRACE_PEEKUSER, m_pid, RDX * 8, NULL);
+}
+
+void
 tcpobserver::after_syscall()
 {
     switch (m_scno) {
@@ -152,6 +164,9 @@ tcpobserver::after_syscall()
     case syscall_accept:
     case syscall_accept4:
         exiting_accept();
+        break;
+    case syscall_connect:
+        exiting_connect();
         break;
     }
 }
@@ -251,6 +266,8 @@ tcpobserver::exiting_bind()
 
     datetime = get_datetime();
 
+    m_fd_set.insert(m_bind_args.sockfd);
+
     std::cerr << std::setprecision(19)
               << "datetime@" << datetime
               << " op@bind"
@@ -275,6 +292,8 @@ tcpobserver::exiting_listen()
     double datetime;
 
     datetime = get_datetime();
+
+    m_fd_set.insert(m_listen_args.sockfd);
 
     std::cerr << std::setprecision(19)
               << "datetime@" << datetime
@@ -354,10 +373,88 @@ tcpobserver::exiting_accept()
 
     datetime = get_datetime();
 
+    m_fd_set.insert(m_accept_args.sockfd);
+    m_fd_set.insert(result);
+
     std::cerr << std::setprecision(19)
               << "datetime@" << datetime
               << " op@accept"
               << " listen_fd@" << m_accept_args.sockfd
+              << " fd@" << result
+              << " protocol@" << domain
+              << " addr@" << addr
+              << " port@" << port
+              << std::endl;
+}
+
+void
+tcpobserver::exiting_connect()
+{
+    int result;
+
+    result = ptrace(PTRACE_PEEKUSER, m_pid, RAX * 8, NULL);
+
+    if (result < 0)
+        return;
+
+    if (connect_args.addrlen < sizeof(long))
+        return;
+
+
+    sockaddr_storage saddr;
+    std::string      domain;
+    double           datetime;
+    uint16_t         port;
+    char             addr[64];
+
+    read_data(&saddr, m_connect_args.addr, sizeof(long));
+
+    switch (saddr.ss_family) {
+    case AF_INET:
+    {
+        sockaddr_in *saddr_in;
+
+        if (m_connect_args.addrlen < sizeof(sockaddr_in))
+            return;
+
+        read_data(&saddr, m_connect_args.addr, sizeof(sockaddr_in));
+
+        saddr_in = (sockaddr_in*)&saddr;
+
+        inet_ntop(AF_INET, &saddr_in->sin_addr, addr, sizeof(addr));
+        port   = ntohs(saddr_in->sin_port);
+        domain = "IPv4";
+
+        break;
+    }
+    case AF_INET6:
+    {
+        sockaddr_in6 *saddr_in6;
+
+        if (m_connect_args.addrlen < sizeof(sockaddr_in6))
+            return;
+
+        read_data(&saddr, m_connect_args.addr, sizeof(sockaddr_in6));
+
+        saddr_in6 = (sockaddr_in6*)&saddr;
+
+        inet_ntop(AF_INET6, &saddr_in6->sin6_addr, addr, sizeof(addr));
+        port   = ntohs(saddr_in6->sin6_port);
+        domain = "IPv6";
+
+        break;
+    }
+    default:
+        return;
+    }
+
+    datetime = get_datetime();
+
+    m_fd_set.insert(result);
+
+    std::cerr << std::setprecision(19)
+              << "datetime@" << datetime
+              << " op@connect"
               << " fd@" << result
               << " protocol@" << domain
               << " addr@" << addr

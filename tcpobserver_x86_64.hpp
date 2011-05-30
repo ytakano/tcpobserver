@@ -54,12 +54,19 @@ private:
         unsigned long rsp;
     };
 
+    struct connect_args {
+        int       sockfd;
+        sockaddr *addr;
+        socklen_t addrlen;
+    };
+
     unsigned long m_scno;
     std::set<int> m_fd_set;
     socket_args   m_socket_args;
     bind_args     m_bind_args;
     listen_args   m_listen_args;
     accept_args   m_accept_args;
+    connect_args  m_connect_args;
 
     // for socket
     void entering_socket();
@@ -76,6 +83,10 @@ private:
     // for accept and accept4
     void entering_accept();
     void exiting_accept();
+
+    // for connect
+    void entering_connect();
+    void exiting_connect();
 };
 
 #endif // __x86_64__
