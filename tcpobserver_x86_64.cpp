@@ -43,7 +43,6 @@ void
 tcpobserver::before_syscall()
 {
     m_scno = ptrace(PTRACE_PEEKUSER, m_pid, ORIG_RAX * 8, NULL);
-    std::cout << "system call number: " << m_scno << std::endl;
 
     switch (m_scno) {
     case syscall_socket:
@@ -489,6 +488,7 @@ tcpobserver::exiting_close()
 
     std::cerr << std::setprecision(19)
               << "datetime@" << datetime
+              << " op@close"
               << " fd@" << m_close_arg
               << std::endl;
 }
