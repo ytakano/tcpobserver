@@ -40,74 +40,78 @@ tcpobserver::~tcpobserver()
 }
 
 void
-tcpobserver::before_syscall()
+tcpobserver::before_syscall(pid_t pid)
 {
-    m_scno = ptrace(PTRACE_PEEKUSER, m_pid, ORIG_RAX * 8, NULL);
+    long scno;
 
-    switch (m_scno) {
+    scno = ptrace(PTRACE_PEEKUSER, pid, ORIG_RAX * 8, NULL);
+
+    m_proc[pid].m_scno = scno;
+
+    switch (scno) {
     case syscall_socket:
-        entering_socket();
+        entering_socket(pid);
         break;
     case syscall_bind:
-        entering_bind();
+        entering_bind(pid);
         break;
     case syscall_listen:
-        entering_listen();
+        entering_listen(pid);
         break;
     case syscall_accept:
     case syscall_accept4:
-        entering_accept();
+        entering_accept(pid);
         break;
     case syscall_connect:
-        entering_connect();
+        entering_connect(pid);
         break;
     case syscall_close:
-        entering_close();
+        entering_close(pid);
         break;
     }
 }
 
 void
-tcpobserver::entering_socket()
+tcpobserver::entering_socket(pid_t pid)
 {
-    m_socket_args.domain   = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
-    m_socket_args.type     = ptrace(PTRACE_PEEKUSER, m_pid, RSI * 8, NULL);
-    m_socket_args.protocol = ptrace(PTRACE_PEEKUSER, m_pid, RDX * 8, NULL);
+    m_proc[pid].m_domain   = ptrace(PTRACE_PEEKUSER, pid, RDI * 8, NULL);
+    m_proc[pid].m_type     = ptrace(PTRACE_PEEKUSER, pid, RSI * 8, NULL);
+    m_proc[pid].m_protocol = ptrace(PTRACE_PEEKUSER, pid, RDX * 8, NULL);
 }
 
 void
-tcpobserver::entering_bind()
+tcpobserver::entering_bind(pid_t pid)
 {
-    m_bind_args.sockfd  = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
-    m_bind_args.addr    = (sockaddr*)ptrace(PTRACE_PEEKUSER, m_pid, RSI * 8,
-                                            NULL);
-    m_bind_args.addrlen = ptrace(PTRACE_PEEKUSER, m_pid, RDX * 8, NULL);
+    m_proc[pid].m_sockfd = ptrace(PTRACE_PEEKUSER, pid, RDI * 8, NULL);
+    m_proc[pid].m_addr   = (sockaddr*)ptrace(PTRACE_PEEKUSER, pid, RSI * 8,
+                                              NULL);
+    m_proc[pid].m_addrlen  = ptrace(PTRACE_PEEKUSER, pid, RDX * 8, NULL);
 }
 
 void
-tcpobserver::entering_listen()
+tcpobserver::entering_listen(pid_t pid)
 {
-    m_listen_args.sockfd = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
+    m_proc[pid].m_sockfd = ptrace(PTRACE_PEEKUSER, pid, RDI * 8, NULL);
 }
 
 void
-tcpobserver::entering_accept()
+tcpobserver::entering_accept(pid_t pid)
 {
-    m_accept_args.sockfd  = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
-    m_accept_args.addr    = (sockaddr*)ptrace(PTRACE_PEEKUSER, m_pid, RSI * 8,
-                                             NULL);
-    m_accept_args.addrlen = (socklen_t*)ptrace(PTRACE_PEEKUSER, m_pid, RDX * 8,
-                                               NULL);
+    m_proc[pid].m_sockfd    = ptrace(PTRACE_PEEKUSER, pid, RDI * 8, NULL);
+    m_proc[pid].m_addr      = (sockaddr*)ptrace(PTRACE_PEEKUSER, pid, RSI * 8,
+                                                NULL);
+    m_proc[pid].m_p_addrlen = (socklen_t*)ptrace(PTRACE_PEEKUSER, pid, RDX * 8,
+                                                 NULL);
 
-    if (m_accept_args.addr == NULL) {
+    if (m_proc[pid].m_addr == NULL) {
         unsigned long rsp;
         unsigned long size;
         unsigned long rem;
         void *p_saddr;
         void *p_slen;
 
-        rsp = ptrace(PTRACE_PEEKUSER, m_pid, RSP * 8, NULL);
-        m_accept_args.rsp = rsp;
+        rsp = ptrace(PTRACE_PEEKUSER, pid, RSP * 8, NULL);
+        m_proc[pid].m_rsp = rsp;
 
         size = sizeof(sockaddr_storage) + sizeof(socklen_t);
 
@@ -115,12 +119,12 @@ tcpobserver::entering_accept()
         size = (size == 0) ? size : size + 16 - rem;
         rsp -= size;
 
-        p_saddr = (void*)(m_accept_args.rsp - sizeof(sockaddr_storage));
-        p_slen  = (void*)(m_accept_args.rsp - sizeof(sockaddr_storage) -
+        p_saddr = (void*)(m_proc[pid].m_rsp - sizeof(sockaddr_storage));
+        p_slen  = (void*)(m_proc[pid].m_rsp - sizeof(sockaddr_storage) -
                           sizeof(socklen_t));
 
-        m_accept_args.addr    = (sockaddr*)p_saddr;
-        m_accept_args.addrlen = (socklen_t*)p_slen;
+        m_proc[pid].m_addr      = (sockaddr*)p_saddr;
+        m_proc[pid].m_p_addrlen = (socklen_t*)p_slen;
 
 
         sockaddr_storage saddr;
@@ -129,76 +133,82 @@ tcpobserver::entering_accept()
         memset(&saddr, 0, sizeof(saddr));
         slen = sizeof(saddr);
 
-        write_data(&saddr, p_saddr, sizeof(saddr));
-        write_data(&slen, p_slen, sizeof(slen));
+        write_data(pid, &saddr, p_saddr, sizeof(saddr));
+        write_data(pid, &slen, p_slen, sizeof(slen));
         
 
-        ptrace(PTRACE_POKEUSER, m_pid, RSP * 8, (void*)rsp);
-        ptrace(PTRACE_POKEUSER, m_pid, RSI * 8, p_saddr);
-        ptrace(PTRACE_POKEUSER, m_pid, RDX * 8, p_slen);
+        ptrace(PTRACE_POKEUSER, pid, RSP * 8, (void*)rsp);
+        ptrace(PTRACE_POKEUSER, pid, RSI * 8, p_saddr);
+        ptrace(PTRACE_POKEUSER, pid, RDX * 8, p_slen);
     } else {
-        m_accept_args.rsp = 0;
+        m_proc[pid].m_rsp = 0;
     }
 }
 
 void
-tcpobserver::entering_connect()
+tcpobserver::entering_connect(pid_t pid)
 {
-    m_connect_args.sockfd  = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
-    m_connect_args.addr    = (sockaddr*)ptrace(PTRACE_PEEKUSER, m_pid, RSI * 8,
-                                               NULL);
-    m_connect_args.addrlen = ptrace(PTRACE_PEEKUSER, m_pid, RDX * 8, NULL);
+    m_proc[pid].m_sockfd  = ptrace(PTRACE_PEEKUSER, pid, RDI * 8, NULL);
+    m_proc[pid].m_addr    = (sockaddr*)ptrace(PTRACE_PEEKUSER, pid, RSI * 8,
+                                              NULL);
+    m_proc[pid].m_addrlen = ptrace(PTRACE_PEEKUSER, pid, RDX * 8, NULL);
 }
 
 void
-tcpobserver::entering_close()
+tcpobserver::entering_close(pid_t pid)
 {
-    m_close_arg = ptrace(PTRACE_PEEKUSER, m_pid, RDI * 8, NULL);
+    m_proc[pid].m_sockfd = ptrace(PTRACE_PEEKUSER, pid, RDI * 8, NULL);
 
-    if (m_fd_set.find(m_close_arg) == m_fd_set.end())
-        m_close_arg = -1;
+    if (m_fd_set.find(m_proc[pid].m_sockfd) == m_fd_set.end())
+        m_proc[pid].m_sockfd = -1;
 }
 
 void
-tcpobserver::after_syscall()
+tcpobserver::after_syscall(pid_t pid)
 {
-    switch (m_scno) {
+    long rax, orig_rax;
+
+    rax = ptrace(PTRACE_PEEKUSER, pid, 8 * RAX, NULL);
+    orig_rax = ptrace(PTRACE_PEEKUSER, pid, 8 * ORIG_RAX, NULL);
+
+    switch (m_proc[pid].m_scno) {
     case syscall_socket:
-        exiting_socket();
+        exiting_socket(pid);
         break;
     case syscall_bind:
-        exiting_bind();
+        exiting_bind(pid);
         break;
     case syscall_listen:
-        exiting_listen();
+        exiting_listen(pid);
         break;
     case syscall_accept:
     case syscall_accept4:
-        exiting_accept();
+        exiting_accept(pid);
         break;
     case syscall_connect:
-        exiting_connect();
+        exiting_connect(pid);
         break;
     case syscall_close:
-        exiting_close();
+        exiting_close(pid);
+        break;
     }
 }
 
 void
-tcpobserver::exiting_socket()
+tcpobserver::exiting_socket(pid_t pid)
 {
     int fd;
 
-    fd = ptrace(PTRACE_PEEKUSER, m_pid, RAX * 8, NULL);
+    fd = ptrace(PTRACE_PEEKUSER, pid, RAX * 8, NULL);
 
-    if ((m_socket_args.domain == AF_INET || m_socket_args.domain == AF_INET6) &&
-        m_socket_args.type == SOCK_STREAM &&
-        (m_socket_args.protocol == IPPROTO_TCP ||
-         m_socket_args.protocol == 0) && fd != -1) {
+    if ((m_proc[pid].m_domain == AF_INET || m_proc[pid].m_domain == AF_INET6) &&
+        m_proc[pid].m_type == SOCK_STREAM &&
+        (m_proc[pid].m_protocol == IPPROTO_TCP ||
+         m_proc[pid].m_protocol == 0) && fd != -1) {
         double datetime;
         std::string domain;
 
-        if (m_socket_args.domain == AF_INET)
+        if (m_proc[pid].m_domain == AF_INET)
             domain = "IPv4";
         else
             domain = "IPv6";
@@ -217,16 +227,16 @@ tcpobserver::exiting_socket()
 }
 
 void
-tcpobserver::exiting_bind()
+tcpobserver::exiting_bind(pid_t pid)
 {
     int result;
 
-    result = ptrace(PTRACE_PEEKUSER, m_pid, RAX * 8, NULL);
+    result = ptrace(PTRACE_PEEKUSER, pid, RAX * 8, NULL);
 
-    if (result < 0)
+    if (result != 0)
         return;
 
-    if (m_bind_args.addrlen < sizeof(long))
+    if (m_proc[pid].m_addrlen < sizeof(long))
         return;
 
 
@@ -236,17 +246,17 @@ tcpobserver::exiting_bind()
     uint16_t         port;
     char             addr[64];
 
-    read_data(&saddr, m_bind_args.addr, sizeof(long));
+    read_data(pid, &saddr, m_proc[pid].m_addr, sizeof(long));
 
     switch (saddr.ss_family) {
     case AF_INET:
     {
         sockaddr_in *saddr_in;
 
-        if (m_bind_args.addrlen < sizeof(sockaddr_in))
+        if (m_proc[pid].m_addrlen < sizeof(sockaddr_in))
             return;
 
-        read_data(&saddr, m_bind_args.addr, sizeof(sockaddr_in));
+        read_data(pid, &saddr, m_proc[pid].m_addr, sizeof(sockaddr_in));
 
         saddr_in = (sockaddr_in*)&saddr;
 
@@ -260,10 +270,10 @@ tcpobserver::exiting_bind()
     {
         sockaddr_in6 *saddr_in6;
 
-        if (m_bind_args.addrlen < sizeof(sockaddr_in6))
+        if (m_proc[pid].m_addrlen < sizeof(sockaddr_in6))
             return;
 
-        read_data(&saddr, m_bind_args.addr, sizeof(sockaddr_in6));
+        read_data(pid, &saddr, m_proc[pid].m_addr, sizeof(sockaddr_in6));
 
         saddr_in6 = (sockaddr_in6*)&saddr;
 
@@ -279,12 +289,12 @@ tcpobserver::exiting_bind()
 
     datetime = get_datetime();
 
-    m_fd_set.insert(m_bind_args.sockfd);
+    m_fd_set.insert(m_proc[pid].m_sockfd);
 
     std::cerr << std::setprecision(19)
               << "datetime@" << datetime
               << " op@bind"
-              << " fd@" << m_bind_args.sockfd
+              << " fd@" << m_proc[pid].m_sockfd
               << " protocol@" << domain
               << " addr@" << addr
               << " port@" << port
@@ -292,11 +302,11 @@ tcpobserver::exiting_bind()
 }
 
 void
-tcpobserver::exiting_listen()
+tcpobserver::exiting_listen(pid_t pid)
 {
     int result;
 
-    result = ptrace(PTRACE_PEEKUSER, m_pid, RAX * 8, NULL);
+    result = ptrace(PTRACE_PEEKUSER, pid, RAX * 8, NULL);
 
     if (result < 0)
         return;
@@ -306,27 +316,27 @@ tcpobserver::exiting_listen()
 
     datetime = get_datetime();
 
-    m_fd_set.insert(m_listen_args.sockfd);
+    m_fd_set.insert(m_proc[pid].m_sockfd);
 
     std::cerr << std::setprecision(19)
               << "datetime@" << datetime
               << " op@listen"
-              << " fd@" << m_listen_args.sockfd
+              << " fd@" << m_proc[pid].m_sockfd
               << std::endl;
 }
 
 void
-tcpobserver::exiting_accept()
+tcpobserver::exiting_accept(pid_t pid)
 {
-    if (m_accept_args.rsp != 0)
-        ptrace(PTRACE_POKEUSER, m_pid, RSP * 8, (void*)m_accept_args.rsp);
+    if (m_proc[pid].m_rsp != 0)
+        ptrace(PTRACE_POKEUSER, pid, RSP * 8, (void*)m_proc[pid].m_rsp);
 
-    m_accept_args.rsp = 0;
+    m_proc[pid].m_rsp = 0;
 
 
     int result;
 
-    result = ptrace(PTRACE_PEEKUSER, m_pid, RAX * 8, NULL);
+    result = ptrace(PTRACE_PEEKUSER, pid, RAX * 8, NULL);
 
     if (result < 0)
         return;
@@ -338,7 +348,7 @@ tcpobserver::exiting_accept()
     uint16_t         port;
     char             addr[64];
 
-    read_data(&saddr, m_accept_args.addr, sizeof(long));
+    read_data(pid, &saddr, m_proc[pid].m_addr, sizeof(long));
 
     switch (saddr.ss_family) {
     case AF_INET:
@@ -346,12 +356,12 @@ tcpobserver::exiting_accept()
         sockaddr_in *saddr_in;
         socklen_t    slen;
 
-        read_data(&slen, m_accept_args.addrlen, sizeof(slen));
+        read_data(pid, &slen, m_proc[pid].m_p_addrlen, sizeof(slen));
 
         if (slen < sizeof(sockaddr_in))
             return;
 
-        read_data(&saddr, m_accept_args.addr, sizeof(sockaddr_in));
+        read_data(pid, &saddr, m_proc[pid].m_addr, sizeof(sockaddr_in));
 
         saddr_in = (sockaddr_in*)&saddr;
 
@@ -365,12 +375,12 @@ tcpobserver::exiting_accept()
         sockaddr_in6 *saddr_in6;
         socklen_t     slen;
 
-        read_data(&slen, m_accept_args.addrlen, sizeof(slen));
+        read_data(pid, &slen, m_proc[pid].m_p_addrlen, sizeof(slen));
 
         if (slen < sizeof(sockaddr_in6))
             return;
 
-        read_data(&saddr, m_accept_args.addr, sizeof(sockaddr_in6));
+        read_data(pid, &saddr, m_proc[pid].m_addr, sizeof(sockaddr_in6));
 
         saddr_in6 = (sockaddr_in6*)&saddr;
 
@@ -386,13 +396,13 @@ tcpobserver::exiting_accept()
 
     datetime = get_datetime();
 
-    m_fd_set.insert(m_accept_args.sockfd);
+    m_fd_set.insert(m_proc[pid].m_sockfd);
     m_fd_set.insert(result);
 
     std::cerr << std::setprecision(19)
               << "datetime@" << datetime
               << " op@accept"
-              << " listen_fd@" << m_accept_args.sockfd
+              << " listen_fd@" << m_proc[pid].m_sockfd
               << " fd@" << result
               << " protocol@" << domain
               << " addr@" << addr
@@ -401,16 +411,16 @@ tcpobserver::exiting_accept()
 }
 
 void
-tcpobserver::exiting_connect()
+tcpobserver::exiting_connect(pid_t pid)
 {
     int result;
 
-    result = ptrace(PTRACE_PEEKUSER, m_pid, RAX * 8, NULL);
+    result = ptrace(PTRACE_PEEKUSER, pid, RAX * 8, NULL);
 
     if (result < 0)
         return;
 
-    if (m_connect_args.addrlen < sizeof(long))
+    if (m_proc[pid].m_addrlen < sizeof(long))
         return;
 
 
@@ -420,17 +430,17 @@ tcpobserver::exiting_connect()
     uint16_t         port;
     char             addr[64];
 
-    read_data(&saddr, m_connect_args.addr, sizeof(long));
+    read_data(pid, &saddr, m_proc[pid].m_addr, sizeof(long));
 
     switch (saddr.ss_family) {
     case AF_INET:
     {
         sockaddr_in *saddr_in;
 
-        if (m_connect_args.addrlen < sizeof(sockaddr_in))
+        if (m_proc[pid].m_addrlen < sizeof(sockaddr_in))
             return;
 
-        read_data(&saddr, m_connect_args.addr, sizeof(sockaddr_in));
+        read_data(pid, &saddr, m_proc[pid].m_addr, sizeof(sockaddr_in));
 
         saddr_in = (sockaddr_in*)&saddr;
 
@@ -444,10 +454,10 @@ tcpobserver::exiting_connect()
     {
         sockaddr_in6 *saddr_in6;
 
-        if (m_connect_args.addrlen < sizeof(sockaddr_in6))
+        if (m_proc[pid].m_addrlen < sizeof(sockaddr_in6))
             return;
 
-        read_data(&saddr, m_connect_args.addr, sizeof(sockaddr_in6));
+        read_data(pid, &saddr, m_proc[pid].m_addr, sizeof(sockaddr_in6));
 
         saddr_in6 = (sockaddr_in6*)&saddr;
 
@@ -476,9 +486,9 @@ tcpobserver::exiting_connect()
 }
 
 void
-tcpobserver::exiting_close()
+tcpobserver::exiting_close(pid_t pid)
 {
-    if (m_close_arg < 0)
+    if (m_proc[pid].m_sockfd < 0)
         return;
 
 
@@ -489,8 +499,14 @@ tcpobserver::exiting_close()
     std::cerr << std::setprecision(19)
               << "datetime@" << datetime
               << " op@close"
-              << " fd@" << m_close_arg
+              << " fd@" << m_proc[pid].m_sockfd
               << std::endl;
+}
+
+void
+tcpobserver::proc_removed(pid_t pid)
+{
+    m_proc.erase(pid);
 }
 
 #endif // __x86_64__

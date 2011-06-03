@@ -19,8 +19,8 @@ public:
     ~tcpobserver();
 
 protected:
-    virtual void before_syscall();
-    virtual void after_syscall();
+    virtual void before_syscall(pid_t pid);
+    virtual void after_syscall(pid_t pid);
 
 private:
     static const unsigned long syscall_socket;
@@ -60,38 +60,48 @@ private:
         socklen_t addrlen;
     };
 
-    unsigned long m_scno;
+    struct proc_info {
+        unsigned long m_scno;
+        int           m_domain;
+        int           m_type;
+        int           m_protocol;
+        int           m_sockfd;
+        sockaddr     *m_addr;
+        socklen_t     m_addrlen;
+        socklen_t    *m_p_addrlen;
+        unsigned long m_rsp;
+    };
+
     std::set<int> m_fd_set;
-    socket_args   m_socket_args;
-    bind_args     m_bind_args;
-    listen_args   m_listen_args;
-    accept_args   m_accept_args;
-    connect_args  m_connect_args;
-    int           m_close_arg;
+    std::map<pid_t, proc_info> m_proc;
+
 
     // for socket
-    void entering_socket();
-    void exiting_socket();
+    void entering_socket(pid_t pid);
+    void exiting_socket(pid_t pid);
 
     // for bind
-    void entering_bind();
-    void exiting_bind();
+    void entering_bind(pid_t pid);
+    void exiting_bind(pid_t pid);
 
     // for listen
-    void entering_listen();
-    void exiting_listen();
+    void entering_listen(pid_t pid);
+    void exiting_listen(pid_t pid);
 
     // for accept and accept4
-    void entering_accept();
-    void exiting_accept();
+    void entering_accept(pid_t pid);
+    void exiting_accept(pid_t pid);
 
     // for connect
-    void entering_connect();
-    void exiting_connect();
+    void entering_connect(pid_t pid);
+    void exiting_connect(pid_t pid);
 
     // for close
-    void entering_close();
-    void exiting_close();
+    void entering_close(pid_t pid);
+    void exiting_close(pid_t pid);
+
+    // process was removed
+    virtual void proc_removed(pid_t pid);
 };
 
 #endif // __x86_64__

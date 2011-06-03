@@ -3,6 +3,8 @@
 
 #include <unistd.h>
 
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -26,14 +28,17 @@ public:
     static tcpobserver_base *instance;
 
 protected:
-    virtual void before_syscall() = 0;
-    virtual void after_syscall()  = 0;
+    virtual void before_syscall(pid_t pid) = 0;
+    virtual void after_syscall(pid_t pid)  = 0;
+
+    virtual void proc_removed(pid_t pid);
 
     double  get_datetime();
-    void    read_data(void *buf, void *addr, size_t len);
-    void    write_data(void *buf, void *addr, size_t len);
+    void    read_data(pid_t pid, void *buf, void *addr, size_t len);
+    void    write_data(pid_t pid, void *buf, void *addr, size_t len);
 
-    pid_t   m_pid;
+    pid_t           m_parent;
+    std::set<pid_t> m_pid;
 
 private:
     void    set_sa_handler();
@@ -42,7 +47,7 @@ private:
     void    split(std::string str, std::vector<std::string> &result);
 
     bool    m_is_exec;
-    bool    m_is_entering;
+    std::map<pid_t, bool> m_is_entering;
 
     friend void signal_handler(int signum);
 };
