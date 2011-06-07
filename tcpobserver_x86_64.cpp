@@ -507,6 +507,8 @@ tcpobserver::exiting_close(pid_t pid)
               << " fd@" << m_proc[pid].m_sockfd
               << " pid@" << pid
               << std::endl;
+
+    m_fd_set.erase(m_proc[pid].m_sockfd);
 }
 
 void

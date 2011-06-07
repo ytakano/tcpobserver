@@ -182,6 +182,7 @@ tcpobserver_base::do_trace()
 {
     pid_t pid;
     int   status;
+    long  signum;
 
     while (m_pid.size() > 0) {
         pid = waitpid(-1, &status, __WALL);
@@ -192,7 +193,7 @@ tcpobserver_base::do_trace()
             break;
         }
 
-        if(WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP &&
+        if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP &&
            WIFCLONE(status)) {
             pid_t newpid;
             if(ptrace(PTRACE_GETEVENTMSG, pid, 0, &newpid) < -1) {
@@ -205,32 +206,37 @@ tcpobserver_base::do_trace()
             m_is_entering[newpid] = true;
 
             ptrace(PTRACE_SYSCALL, newpid, 0, 0);
-
             ptrace(PTRACE_SYSCALL, pid, 0, 0);
 
             continue;
         }
 
-        if(WIFEXITED(status)) {
+        if (WIFEXITED(status)) {
             m_pid.erase(pid);
             m_is_entering.erase(pid);
 
             continue;
-        } else if(WIFSIGNALED(status)) {
+        } else if (WIFSIGNALED(status)) {
             m_pid.erase(pid);
             m_is_entering.erase(pid);
 
             continue;
-        } else if(WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP) {
-            if (m_is_entering[pid])
-                before_syscall(pid);
-            else
-                after_syscall(pid);
+        } else if (WIFSTOPPED(status)) {
+            if (WSTOPSIG(status) == SIGTRAP) {
+                if (m_is_entering[pid])
+                    before_syscall(pid);
+                else
+                    after_syscall(pid);
 
-            m_is_entering[pid] = !m_is_entering[pid];
+                m_is_entering[pid] = !m_is_entering[pid];
+
+                signum = 0;
+            } else {
+                signum = WSTOPSIG(status);
+            }
         }
 
-        if(ptrace(PTRACE_SYSCALL, pid, 1, NULL) < 0) {
+        if (ptrace(PTRACE_SYSCALL, pid, 1, signum) < 0) {
             PRINT_ERROR();
             cleanup();
             break;
