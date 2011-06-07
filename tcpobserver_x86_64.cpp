@@ -222,6 +222,7 @@ tcpobserver::exiting_socket(pid_t pid)
                   << " op@socket"
                   << " fd@" << fd
                   << " protocol@" << domain
+                  << " pid@" << pid
                   << std::endl;
     }
 }
@@ -298,6 +299,7 @@ tcpobserver::exiting_bind(pid_t pid)
               << " protocol@" << domain
               << " addr@" << addr
               << " port@" << port
+              << " pid@" << pid
               << std::endl;
 }
 
@@ -322,6 +324,7 @@ tcpobserver::exiting_listen(pid_t pid)
               << "datetime@" << datetime
               << " op@listen"
               << " fd@" << m_proc[pid].m_sockfd
+              << " pid@" << pid
               << std::endl;
 }
 
@@ -407,6 +410,7 @@ tcpobserver::exiting_accept(pid_t pid)
               << " protocol@" << domain
               << " addr@" << addr
               << " port@" << port
+              << " pid@" << pid
               << std::endl;
 }
 
@@ -482,6 +486,7 @@ tcpobserver::exiting_connect(pid_t pid)
               << " protocol@" << domain
               << " addr@" << addr
               << " port@" << port
+              << " pid@" << pid
               << std::endl;
 }
 
@@ -500,6 +505,7 @@ tcpobserver::exiting_close(pid_t pid)
               << "datetime@" << datetime
               << " op@close"
               << " fd@" << m_proc[pid].m_sockfd
+              << " pid@" << pid
               << std::endl;
 }
 

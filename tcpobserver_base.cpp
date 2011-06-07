@@ -14,10 +14,8 @@
 #include <iostream>
 #include <sstream>
 
-#define PTRACE_OPTS PTRACE_O_TRACEFORK | PTRACE_O_TRACEVFORK | PTRACE_O_TRACECLONE
+#define PTRACE_OPTS PTRACE_O_TRACECLONE
 
-#define WIFFORK(STATUS)  (((STATUS & 0xff0000) >> 16) == PTRACE_EVENT_FORK)
-#define WIFVFORK(STATUS) (((STATUS & 0xff0000) >> 16) == PTRACE_EVENT_VFORK)
 #define WIFCLONE(STATUS) (((STATUS & 0xff0000) >> 16) == PTRACE_EVENT_CLONE)
 
 
@@ -188,39 +186,54 @@ tcpobserver_base::do_trace()
     while (m_pid.size() > 0) {
         pid = waitpid(-1, &status, __WALL);
 
-        if (WIFEXITED(status)) {
-            m_pid.erase(pid);
-            m_is_entering.erase(pid);
+        if (pid < 0) {
+            PRINT_ERROR();
+            cleanup();
+            break;
+        }
 
-            continue;
-        } else if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP) {
-            if (ptrace(PTRACE_SETOPTIONS, pid, NULL, PTRACE_OPTS) < 0)
+        if(WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP &&
+           WIFCLONE(status)) {
+            pid_t newpid;
+            if(ptrace(PTRACE_GETEVENTMSG, pid, 0, &newpid) < -1) {
                 PRINT_ERROR();
-
-            if (ptrace(PTRACE_SYSCALL, pid, NULL, NULL) < 0) {
-                PRINT_ERROR();
-            } else {
-                m_pid.insert(pid);
-                m_is_entering[pid] = true;
+                cleanup();
+                break;
             }
+
+            m_pid.insert(newpid);
+            m_is_entering[newpid] = true;
+
+            ptrace(PTRACE_SYSCALL, newpid, 0, 0);
+
+            ptrace(PTRACE_SYSCALL, pid, 0, 0);
 
             continue;
         }
 
-        if (WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP) {
-            if (! WIFFORK(status) && ! WIFVFORK(status) && ! WIFCLONE(status)) {
-                if (m_is_entering[pid])
-                    before_syscall(pid);
-                else
-                    after_syscall(pid);
+        if(WIFEXITED(status)) {
+            m_pid.erase(pid);
+            m_is_entering.erase(pid);
 
-                m_is_entering[pid] = !m_is_entering[pid];
-            }
+            continue;
+        } else if(WIFSIGNALED(status)) {
+            m_pid.erase(pid);
+            m_is_entering.erase(pid);
 
-            if (ptrace(PTRACE_SYSCALL, pid, NULL, NULL) < 0) {
-                m_pid.erase(pid);
-                m_is_entering.erase(pid);
-            }
+            continue;
+        } else if(WIFSTOPPED(status) && WSTOPSIG(status) == SIGTRAP) {
+            if (m_is_entering[pid])
+                before_syscall(pid);
+            else
+                after_syscall(pid);
+
+            m_is_entering[pid] = !m_is_entering[pid];
+        }
+
+        if(ptrace(PTRACE_SYSCALL, pid, 1, NULL) < 0) {
+            PRINT_ERROR();
+            cleanup();
+            break;
         }
     }
 }
